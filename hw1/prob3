@@ -1,0 +1,74 @@
+import pandas as pd
+import sklearn.neighbors as nb
+import sklearn.model_selection as ms
+import matplotlib.pyplot as plt
+from sklearn import tree
+from sklearn import svm
+
+
+K = [1, 5, 10, 15]
+
+df = pd.read_table('data_seed.dat', sep='\t', error_bad_lines=False)
+
+N = df.shape[0]
+
+
+# k-fold cross-validation
+
+five_error = []
+
+for k in K:
+	record = []
+	kf = ms.KFold(n_splits=5)
+	for train_index, test_index in kf.split(df):
+		tree = nb.KDTree(df.iloc[train_index])
+		for i in range(0,len(test_index)):
+			row = df.iloc[[test_index[i]]]
+			dist, ind = tree.query(row, k=k)
+			neighbor_vote = df.iloc[ind.reshape(-1,),7].mode()		
+			record.append([row.iloc[0,7], neighbor_vote[0]])
+	five_error.append(float(sum([j[0]==j[1] for j in record]))/N) 
+
+# leave one out
+loo_error = []
+
+for k in K:
+	record = []
+	kf = ms.KFold(n_splits=N)
+	for train_index, test_index in kf.split(df):
+		tree = nb.KDTree(df.iloc[train_index])
+		for i in range(0,len(test_index)):
+			row = df.iloc[[test_index[i]]]
+			dist, ind = tree.query(row, k=k)
+			neighbor_vote = df.iloc[ind.reshape(-1,),7].mode()		
+			record.append([row.iloc[0,7], neighbor_vote[0]])
+	loo_error.append(float(sum([j[0]==j[1] for j in record]))/len(record)) 
+
+plt.plot(K,five_error)
+plt.plot(K, loo_error)
+plt.show()
+
+
+
+# Decision trees
+actual = np.array([])
+predicted = np.array([])
+kf = ms.KFold(n_splits=5)
+for train_index, test_index in kf.split(df):
+	clf = tree.DecisionTreeClassifier()
+	clf = clf.fit(df.iloc[train_index,0:7], df.iloc[train_index,7])
+	actual = np.append(actual, clf.predict(df.iloc[test_index,0:7]))
+	predicted = np.append(predicted, df.iloc[test_index,7])
+tree_err = np.equal(actual,predicted).sum() / float(len(actual))
+
+# SVM
+actual = np.array([])
+predicted = np.array([])
+kf = ms.KFold(n_splits=5)
+for train_index, test_index in kf.split(df):
+	clf = svm.SVC()
+	clf = clf.fit(df.iloc[train_index,0:7], df.iloc[train_index,7])
+	actual = np.append(actual, clf.predict(df.iloc[test_index,0:7]))
+	predicted = np.append(predicted, df.iloc[test_index,7])
+svm_err = np.equal(actual,predicted).sum() / float(len(actual))
+
