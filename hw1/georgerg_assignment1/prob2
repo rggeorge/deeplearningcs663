@@ -1,0 +1,86 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.optimize as op
+
+def X_mat(x, degree):
+	return np.matrix([np.power(x,n) for n in range(0,degree+1)])
+
+def fit_polynomial(x, y, degree):
+	X = X_mat(x, degree)
+	pre_mat = np.linalg.pinv(X.transpose()*X)
+	return pre_mat.dot(X.transpose()).transpose().dot(y)
+
+# part 1
+
+N = [15, 100]
+sigma = [0, .05, .2]
+orders = [1,2,9]
+# orders = [2]
+xs = []
+ys = []
+fits = []
+mse = []
+fig, axes = plt.subplots(2, 3)
+
+for n in range(0,len(N)):
+	fits.append([])
+	mse.append([])
+	xs.append([])
+	ys.append([])
+	for s in range(0,len(sigma)):
+		x = np.linspace(-1,3,N[n])
+		y = x*x-3*x+1
+		xs[n].append(x)
+		y_noise = y + np.random.normal(0,sigma[s],N[n])
+		ys[n].append(y_noise)
+		axes[n,s].plot(x, y_noise)
+
+		fits[n].append([])
+		mse[n].append([])
+		for o in orders:
+			fit = fit_polynomial(xs[n][s], ys[n][s], o)
+			fits[n][s].append(fit)
+			X = X_mat(x, o)
+			y_est = X.transpose().dot(fit.transpose())
+			mse[n][s].append(np.power(y_est.reshape(N[n],)-y_noise,2).sum())
+			axes[n,s].plot(x, y_est)
+		
+plt.show()
+
+fits
+mse
+
+
+def cost_reg(w,x,y,l):
+	X = X_mat(x, len(w)-1)
+	y_est = X.transpose().dot(w.transpose())
+	mse = np.power(y_est.reshape(len(x),)-y,2).sum()
+	return mse + l *np.power(w,2).sum()
+
+# part 4, regularization
+lambdas = [10, -1, .1]
+sigma = .05
+weights = []
+mse = []
+
+for n in N:
+	x = np.linspace(-1,3,n)
+	y = x*x-3*x+1
+	y_noise = y + np.random.normal(0,sigma,n)
+	weights.append([])
+	for o in orders:
+		weights.append([])
+		for l in lambdas:
+			w_init = fit_polynomial(x, y, o)
+			opt_fun = lambda w: cost_reg(w, x, y, l)
+			pars = op.minimize(opt_fun,w_init)
+			weights.append(pars.x)
+			y_est = X_mat(x, o).transpose().dot(pars.x)
+			mse_meas = np.power(y_est.reshape(n,)-y_noise,2).sum()
+			mse.append(mse_meas)
+
+
+
+
+
+
