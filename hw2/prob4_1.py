@@ -60,7 +60,7 @@ def model_fn(features, labels, mode):
     # Define loss and optimizer
     # Compare the use of squared loss, cross entropy loss, and softmax with log-likelihood 
     
-
+    loss_op = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits) 
 
 
 
