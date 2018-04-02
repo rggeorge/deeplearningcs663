@@ -38,7 +38,7 @@ def cnn_model_fn(features, labels, mode):
   conv1 = tf.layers.conv2d(
       inputs=input_layer,
       filters=32,
-      kernel_size=[4, 4],
+      kernel_size=[5, 5],
       padding="same",
       activation=tf.nn.sigmoid)
 
@@ -46,7 +46,7 @@ def cnn_model_fn(features, labels, mode):
   # First max pooling layer with a 2x2 filter and stride of 2
   # Input Tensor Shape: [batch_size, 28, 28, 32]
   # Output Tensor Shape: [batch_size, 14, 14, 32]
-  pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[3, 3], strides=2)
+  pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
 
   # Convolutional Layer #2
   # Computes 64 features using a 5x5 filter.
@@ -55,8 +55,8 @@ def cnn_model_fn(features, labels, mode):
   # Output Tensor Shape: [batch_size, 14, 14, 64]
   conv2 = tf.layers.conv2d(
       inputs=pool1,
-      filters=52,
-      kernel_size=[3, 3],
+      filters=64,
+      kernel_size=[5, 5],
       padding="same",
       activation=tf.nn.relu)
 
@@ -79,7 +79,7 @@ def cnn_model_fn(features, labels, mode):
 
   # Add dropout operation; 0.6 probability that element will be kept
   dropout = tf.layers.dropout(
-      inputs=dense, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+      inputs=dense, rate=0.5, training=mode == tf.estimator.ModeKeys.TRAIN)
 
   # Logits layer
   # Input Tensor Shape: [batch_size, 1024]
@@ -101,7 +101,7 @@ def cnn_model_fn(features, labels, mode):
 
   # Configure the Training Op (for TRAIN mode)
   if mode == tf.estimator.ModeKeys.TRAIN:
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.0005)
     train_op = optimizer.minimize(
         loss=loss,
         global_step=tf.train.get_global_step())
@@ -137,7 +137,7 @@ def main(unused_argv):
   train_input_fn = tf.estimator.inputs.numpy_input_fn(
       x={"x": train_data},
       y=train_labels,
-      batch_size=100,
+      batch_size=50,
       num_epochs=None,
       shuffle=True)
   mnist_classifier.train(
